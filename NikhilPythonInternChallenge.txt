@@ -1,0 +1,123 @@
+import sys
+import csv
+
+with open('h1b_input.csv', 'r') as file:
+    my_reader = csv.reader(file, delimiter=';')
+    for row in my_reader:
+        print(row)
+
+occupations_dictionary = {}
+states_dictionary = {}
+
+state_column_index = -1
+status_column_index = -1
+occupation_name_index = -1
+occupation_code_index = -1
+total_certified_applications_number = 0
+
+#inititializing headers
+TOP_OCCUPATIONS_FILE_HEADER = ('TOP_OCCUPATIONS;'
+                               'NUMBER_CERTIFIED_APPLICATIONS;'
+                               'PERCENTAGE\n')
+TOP_STATES_FILE_HEADER = ('TOP_STATES;'
+                          'NUMBER_CERTIFIED_APPLICATIONS;'
+                          'PERCENTAGE\n')
+
+
+def layout(header, separator):
+  
+    # Access global variables for modification.
+    global state_column_index, status_column_index, occupation_name_index, occupation_code_index
+    columns = header.split(separator)
+
+    for column in columns:
+        if ('STATUS' in column.upper()):
+            # case status column
+            status_column_index = columns.index(column)
+
+        if ('NAICS_CODE' in column.upper()):
+            # soc code column
+            occupation_code_index = columns.index(column)
+
+        if ('LCA_CASE_WORKLOC1_STATE' in column.upper()
+                or 'WORKSITE_STATE' in column.upper()
+                or 'JOB_INFO_WORK_STATE' in column.upper()):
+            state_column_index = columns.index(column)
+
+
+def SPLITPROCESS(row, separator):
+    # Initialize local variables.
+    list_of_columns = []
+    column = ''
+    dont_split = False
+
+    for character in row:
+        if (character != separator):
+            if (character == '"'):
+                if (not dont_split):
+ # reached opening double quotation mark.
+                    dont_split = True
+                else:
+ # reached closing double quotation mark.
+                    dont_split = False
+                continue            # to skip the quotation mark in the result.
+            column = column + character
+
+        else:
+            # Having seperator 
+          
+            if (dont_split):
+                
+                column = column + character
+            else:
+                
+                list_of_columns.append(column) 
+                column = ''         
+    list_of_columns.append(column)
+    return list_of_columns
+
+
+def insert_into_states_dictionary(states_dictionary, state):
+   
+    if state in states_dictionary:
+        states_dictionary[state] = states_dictionary[state] + 1
+    else:
+        states_dictionary[state] = 1
+
+
+def insert_into_occupation_dictionary(
+        occupations_dictionary, NAICS_CODE):
+    if soc_code in occupations_dictionary:
+            occupations_dictionary[NAICS_CODE] = occupations_dictionary[NAICS_CODE] + 1
+
+    else:
+       
+        occupations_dictionary[NAICS_CODE] = {NAICS_CODE: 1}
+
+
+
+def sort_occupations_dictionary():
+    
+    for key in occupations_dictionary:
+        sorted_inner_dictionary = sorted(occupations_dictionary[key].items(),
+                                         key=lambda key_value: (-key_value[1],
+                                                                key_value[0]))
+
+        certifiedcount = sum(occupations_dictionary[key].values())
+
+
+        occupations_dictionary[key] = {occupation_name: certifiedcount}
+
+    top_occupations = sorted(occupations_dictionary.items(),
+                             key=lambda key_value: (-list(key_value[1].values())[0],
+                                                    list(key_value[1].keys())[0]))
+    return top_occupations
+
+
+def sort_states_dictionary():
+    top_states = sorted(states_dictionary.items(),
+                        key=lambda key_value: (-key_value[1],
+                                               key_value[0]))
+    return top_states
+
+
